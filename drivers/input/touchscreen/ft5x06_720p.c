@@ -2048,19 +2048,16 @@ static int ft5x06_parse_dt(struct device *dev,
 		return rc;
 
 
-	pdata->i2c_pull_up = of_property_read_bool(np,
-						 "ftech, i2c-pull-up");
+	pdata->i2c_pull_up = of_property_read_bool(np, "ftech,i2c-pull-up");
 
-	pdata->no_force_update = of_property_read_bool(np,
-							 "ftech, no-force-update");
+	pdata->no_force_update = of_property_read_bool(np,"ftech,no-force-update");
 	/* reset, irq gpio info */
-	pdata->reset_gpio = of_get_named_gpio_flags(np, "ftech, reset-gpio",
+	pdata->reset_gpio = of_get_named_gpio_flags(np, "ftech,reset-gpio",
 						0, &pdata->reset_gpio_flags);
 	if (pdata->reset_gpio < 0)
 		return pdata->reset_gpio;
 
-	pdata->irq_gpio = of_get_named_gpio_flags(np, "ftech, irq-gpio",
-					  0, &pdata->irq_gpio_flags);
+	pdata->irq_gpio = of_get_named_gpio_flags(np, "ftech,irq-gpio", 0, &pdata->irq_gpio_flags);
 	if (pdata->irq_gpio < 0)
 		return pdata->irq_gpio;
 
@@ -2071,61 +2068,61 @@ static int ft5x06_parse_dt(struct device *dev,
 		return rc;
 	}
 
-	rc = of_property_read_u32(np, "ftech, group-id", &temp_val);
+	rc = of_property_read_u32(np, "ftech,group-id", &temp_val);
 	if (!rc)
 		pdata->group_id = temp_val;
 	else
 		return rc;
 
-	rc = of_property_read_u32(np, "ftech, hard-reset-delay-ms",
+	rc = of_property_read_u32(np, "ftech,hard-reset-delay-ms",
 							  &temp_val);
 	if (!rc)
 		pdata->hard_rst_dly = temp_val;
 	else
 		return rc;
 
-	rc = of_property_read_u32(np, "ftech, soft-reset-delay-ms",
+	rc = of_property_read_u32(np, "ftech,soft-reset-delay-ms",
 							  &temp_val);
 	if (!rc)
 		pdata->soft_rst_dly = temp_val;
 	else
 		return rc;
 
-	rc = of_property_read_u32(np, "ftech, num-max-touches", &temp_val);
+	rc = of_property_read_u32(np, "ftech,num-max-touches", &temp_val);
 	if (!rc)
 	pdata->num_max_touches = temp_val;
 	else
 		return rc;
 
-	rc = of_property_read_u32(np, "ftech, fw-delay-aa-ms", &temp_val);
+	rc = of_property_read_u32(np, "ftech,fw-delay-aa-ms", &temp_val);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw delay aa\n");
 		return rc;
 	} else if (rc != -EINVAL)
 		pdata->info.delay_aa =  temp_val;
 
-	rc = of_property_read_u32(np, "ftech, fw-delay-55-ms", &temp_val);
+	rc = of_property_read_u32(np, "ftech,fw-delay-55-ms", &temp_val);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw delay 55\n");
 		return rc;
 	} else if (rc != -EINVAL)
 		pdata->info.delay_55 =  temp_val;
 
-	rc = of_property_read_u32(np, "ftech, fw-upgrade-id1", &temp_val);
+	rc = of_property_read_u32(np, "ftech,fw-upgrade-id1", &temp_val);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw upgrade id1\n");
 		return rc;
 	} else if (rc != -EINVAL)
 		pdata->info.upgrade_id_1 =  temp_val;
 
-	rc = of_property_read_u32(np, "ftech, fw-upgrade-id2", &temp_val);
+	rc = of_property_read_u32(np, "ftech,fw-upgrade-id2", &temp_val);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw upgrade id2\n");
 		return rc;
 	} else if (rc != -EINVAL)
 		pdata->info.upgrade_id_2 =  temp_val;
 
-	rc = of_property_read_u32(np, "ftech, fw-delay-readid-ms",
+	rc = of_property_read_u32(np, "ftech,fw-delay-readid-ms",
 							  &temp_val);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw delay read id\n");
@@ -2133,7 +2130,7 @@ static int ft5x06_parse_dt(struct device *dev,
 	} else if (rc != -EINVAL)
 		pdata->info.delay_readid =  temp_val;
 
-	rc = of_property_read_u32(np, "ftech, fw-delay-era-flsh-ms",
+	rc = of_property_read_u32(np, "ftech,fw-delay-era-flsh-ms",
 							  &temp_val);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw delay erase flash\n");
@@ -2142,21 +2139,21 @@ static int ft5x06_parse_dt(struct device *dev,
 		pdata->info.delay_erase_flash =  temp_val;
 
 	pdata->info.auto_cal = of_property_read_bool(np,
-						   "ftech, fw-auto-cal");
+						   "ftech,fw-auto-cal");
 
 	pdata->fw_vkey_support = of_property_read_bool(np,
-							 "ftech, fw-vkey-support");
+							 "ftech,fw-vkey-support");
 
 	pdata->ignore_id_check = of_property_read_bool(np,
-							 "ftech, ignore-id-check");
+							 "ftech,ignore-id-check");
 
-	rc = of_property_read_u32(np, "ftech, family-id", &temp_val);
+	rc = of_property_read_u32(np, "ftech,family-id", &temp_val);
 	if (!rc)
 		pdata->family_id = temp_val;
 	else
 		return rc;
 
-	prop = of_find_property(np, "ftech, button-map", NULL);
+	prop = of_find_property(np, "ftech,button-map", NULL);
 	if (prop) {
 		num_buttons = prop->length / sizeof(temp_val);
 		if (num_buttons > MAX_BUTTONS)
