@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2015, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2016 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -3648,7 +3649,7 @@ error:
 
 static int mdss_mdp_overlay_on(struct msm_fb_data_type *mfd)
 {
-	int rc;
+	int rc, ad_ret;
 	struct mdss_overlay_private *mdp5_data;
 	struct mdss_mdp_ctl *ctl = NULL;
 
@@ -3697,6 +3698,12 @@ panel_on:
 		pr_err("Failed to turn on fb%d\n", mfd->index);
 		mdss_mdp_overlay_off(mfd);
 		goto end;
+	}
+
+	if (mfd->mdp.ad_work_setup) {
+		ad_ret = mfd->mdp.ad_work_setup(mfd);
+		if (ad_ret)
+			pr_err("AD work queue setup failed! ret =%d\n", ad_ret);
 	}
 
 end:
