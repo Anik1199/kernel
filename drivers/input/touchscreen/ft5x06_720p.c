@@ -407,8 +407,8 @@ static irqreturn_t ft5x06_ts_interrupt(int irq, void *dev_id)
 				break;
 			default:
 				break;
+			}
 		}
-}
 
 		input_mt_slot(ip_dev, id);
 		if (status == FT_TOUCH_DOWN || status == FT_TOUCH_CONTACT) {
@@ -609,7 +609,6 @@ static int ft5x06_ts_suspend(struct device *dev)
 		msleep(data->pdata->hard_rst_dly);
 	}
 
-
 	if (data->pdata->power_on) {
 		err = data->pdata->power_on(false);
 		if (err) {
@@ -782,7 +781,6 @@ static int ft5x06_fw_upgrade_start(struct i2c_client *client,
 	u8 is_5336_new_bootloader = false;
 	u8 is_5336_fwsize_30 = false;
 	u8 fw_ecc;
-
 
 #if 1
 	reg_addr = FT_REG_ID;
@@ -2005,12 +2003,12 @@ static int ft5x06_get_dt_coords(struct device *dev, char *name,
 		return rc;
 	}
 
-	if (!strcmp(name, "ftech, panel-coords")) {
+	if (!strcmp(name, "ftech,panel-coords")) {
 		pdata->panel_minx = coords[0];
 		pdata->panel_miny = coords[1];
 		pdata->panel_maxx = coords[2];
 		pdata->panel_maxy = coords[3];
-	} else if (!strcmp(name, "ftech, display-coords")) {
+	} else if (!strcmp(name, "ftech,display-coords")) {
 		pdata->x_min = coords[0];
 		pdata->y_min = coords[1];
 		pdata->x_max = coords[2];
@@ -2033,17 +2031,17 @@ static int ft5x06_parse_dt(struct device *dev,
 	u32 button_map[MAX_BUTTONS];
 
 	pdata->name = "ftech";
-	rc = of_property_read_string(np, "ftech, name", &pdata->name);
+	rc = of_property_read_string(np, "ftech,name", &pdata->name);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read name\n");
 		return rc;
 	}
 
-	rc = ft5x06_get_dt_coords(dev, "ftech, panel-coords", pdata);
+	rc = ft5x06_get_dt_coords(dev, "ftech,panel-coords", pdata);
 	if (rc && (rc != -EINVAL))
 		return rc;
 
-	rc = ft5x06_get_dt_coords(dev, "ftech, display-coords", pdata);
+	rc = ft5x06_get_dt_coords(dev, "ftech,display-coords", pdata);
 	if (rc)
 		return rc;
 
@@ -2062,7 +2060,7 @@ static int ft5x06_parse_dt(struct device *dev,
 		return pdata->irq_gpio;
 
 	pdata->fw_name = "ft_fw.bin";
-	rc = of_property_read_string(np, "ftech, fw-name", &pdata->fw_name);
+	rc = of_property_read_string(np, "ftech,fw-name", &pdata->fw_name);
 	if (rc && (rc != -EINVAL)) {
 		dev_err(dev, "Unable to read fw name\n");
 		return rc;
@@ -2160,7 +2158,7 @@ static int ft5x06_parse_dt(struct device *dev,
 			return -EINVAL;
 
 		rc = of_property_read_u32_array(np,
-										"ftech, button-map", button_map,
+										"ftech,button-map", button_map,
 										num_buttons);
 		if (rc) {
 			dev_err(dev, "Unable to read key codes\n");
@@ -3015,7 +3013,7 @@ MODULE_DEVICE_TABLE(i2c, ft5x06_ts_id);
 
 #ifdef CONFIG_OF
 static struct of_device_id ft5x06_match_table[] = {
-	{.compatible = "focaltech, 5336",},
+	{.compatible = "focaltech,5336",},
 	{},
 };
 #else

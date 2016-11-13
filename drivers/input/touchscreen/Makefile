@@ -80,21 +80,9 @@ obj-$(CONFIG_TOUCHSCREEN_W90X900)	+= w90p910_ts.o
 obj-$(CONFIG_TOUCHSCREEN_TPS6507X)	+= tps6507x-ts.o
 
 ifeq ($(CONFIG_ARM64), y)
-obj-$(CONFIG_TOUCHSCREEN_FT5X06)	+= ft5x06_ts.o focal_mcap_test_lib64.a
-else  # Target is 32-bit.
-obj-$(CONFIG_TOUCHSCREEN_FT5X06)	+= ft5x06_ts.o focal_mcap_test_lib32.a
-endif
-
-ifeq ($(CONFIG_ARM64), y)
 obj-$(CONFIG_TOUCHSCREEN_FT5X06)	+= ft5x06_720p.o focal_mcap_test_lib64.a
 else  # Target is 32-bit.
 obj-$(CONFIG_TOUCHSCREEN_FT5X06)	+= ft5x06_720p.o focal_mcap_test_lib32.a
-endif
-
-ifeq ($(CONFIG_ARM64), y)
-obj-$(CONFIG_TOUCHSCREEN_H2X)	+= ft5x06_h2x.o focal_mcap_test_lib64.a
-else  # Target is 32-bit.
-obj-$(CONFIG_TOUCHSCREEN_H2X)	+= ft5x06_h2x.o focal_mcap_test_lib32.a
 endif
 
 obj-$(CONFIG_TOUCHSCREEN_IST30XX) += ist30xxc.o ist30xxc_misc.o ist30xxc_sys.o ist30xxc_update.o ist30xxc_tracking.o  ist30xxc_cmcs.o
