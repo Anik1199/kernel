@@ -23,7 +23,6 @@
 #include <linux/err.h>
 
 #include "mdss_dsi.h"
-#include <linux/hardware_info.h>
 
 #define DT_CMD_HDR 6
 
@@ -35,8 +34,6 @@
 
 #define MIN_REFRESH_RATE 48
 #define DEFAULT_MDP_TRANSFER_TIME 14000
-
-extern char Lcm_name[HARDWARE_MAX_ITEM_LONGTH];
 
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
@@ -50,7 +47,7 @@ void mdss_dsi_panel_pwm_cfg(struct mdss_dsi_ctrl_pdata *ctrl)
 		pr_err("%s: Error: lpg_chan=%d pwm request failed",
 				__func__, ctrl->pwm_lpg_chan);
 	}
-	ctrl->pwm_enabled = 1;
+	ctrl->pwm_enabled = 0;
 }
 
 static void mdss_dsi_panel_bklt_pwm(struct mdss_dsi_ctrl_pdata *ctrl, int level)
@@ -334,7 +331,6 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 		gpio_free(ctrl_pdata->rst_gpio);
 		if (gpio_is_valid(ctrl_pdata->mode_gpio))
 			gpio_free(ctrl_pdata->mode_gpio);
-		usleep(3000);
 	}
 	return rc;
 }
@@ -622,14 +618,8 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 			goto end;
 	}
 
-
-	if (ctrl->init_last) {
-		if (ctrl->on_cmds.cmd_cnt)
-			mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
-	} else {
-		if (ctrl->on_cmds.cmd_cnt)
-			mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
-	}
+	if (ctrl->on_cmds.cmd_cnt)
+		mdss_dsi_panel_cmds_send(ctrl, &ctrl->on_cmds);
 
 end:
 	pinfo->blank_state = MDSS_PANEL_BLANK_UNBLANK;
@@ -1061,6 +1051,49 @@ static int mdss_dsi_parse_reset_seq(struct device_node *np,
 	return 0;
 }
 
+static int mdss_dsi_gen_read_status(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
+{
+	if (ctrl_pdata->status_buf.data[0] !=
+					ctrl_pdata->status_value) {
+		pr_err("%s: Read back value from panel is incorrect\n",
+							__func__);
+		return -EINVAL;
+	} else {
+		return 1;
+	}
+}
+
+static int mdss_dsi_nt35596_read_status(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
+{
+	if (ctrl_pdata->status_buf.data[0] !=
+					ctrl_pdata->status_value) {
+		ctrl_pdata->status_error_count = 0;
+		pr_err("%s: Read back value from panel is incorrect\n",
+							__func__);
+		return -EINVAL;
+	} else {
+		if (ctrl_pdata->status_buf.data[3] != NT35596_BUF_3_STATUS) {
+			ctrl_pdata->status_error_count = 0;
+		} else {
+			if ((ctrl_pdata->status_buf.data[4] ==
+				NT35596_BUF_4_STATUS) ||
+				(ctrl_pdata->status_buf.data[5] ==
+				NT35596_BUF_5_STATUS))
+				ctrl_pdata->status_error_count = 0;
+			else
+				ctrl_pdata->status_error_count++;
+			if (ctrl_pdata->status_error_count >=
+					NT35596_MAX_ERR_CNT) {
+				ctrl_pdata->status_error_count = 0;
+				pr_err("%s: Read value bad. Error_cnt = %i\n",
+					 __func__,
+					ctrl_pdata->status_error_count);
+				return -EINVAL;
+			}
+		}
+		return 1;
+	}
+}
 
 static void mdss_dsi_parse_roi_alignment(struct device_node *np,
 		struct mdss_panel_info *pinfo)
@@ -1426,49 +1459,6 @@ static void mdss_dsi_set_lane_clamp_mask(struct mipi_panel_info *mipi)
 }
 
 
-void mdss_dsi_parse_status_command(struct device_node *np, struct mdss_dsi_ctrl_pdata *ctrl_pdata)
-{
-	int i = 0;
-	char cmd_key[] = "qcom,mdss-dsi-panel-status-command1";
-	int cmd_len = strlen(cmd_key);
-	for (i = 1; i <= ctrl_pdata->status_cmds_num; i++) {
-		cmd_key[cmd_len-1] = i + '0';
-		mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->status_cmds[i-1],
-			cmd_key, "qcom,mdss-dsi-panel-status-command-state");
-	}
-}
-int mdss_dsi_parse_status_value(struct device_node *np, struct mdss_dsi_ctrl_pdata *ctrl_pdata)
-{
-	int len = 0;
-	int i = 0, rc = 0;
-	struct property *data;
-	char cmd_key[] = "qcom,mdss-dsi-panel-status-value1";
-	int j = 1;
-	u32 sta_val[5];
-	int cmd_len = strlen(cmd_key);
-
-	for (j = 1; j <= ctrl_pdata->status_cmds_num; j++) {
-		cmd_key[cmd_len-1] = j + '0';
-		data = of_find_property(np, cmd_key, &len);
-		len /= sizeof(u32);
-		if (!data) {
-			pr_err("%s: failed, key=%s\n", __func__, cmd_key);
-			return 0;
-		} else {
-			rc = of_property_read_u32_array(np, cmd_key, sta_val, len);
-			if (rc) {
-				pr_err("%s: Error reading qcom,mdss-dsi-panel-status-value", __func__);
-				return 0;
-			} else {
-				for (i = 0; i < len; i++)
-					ctrl_pdata->status_value[j-1][i] = sta_val[i];
-			}
-		}
-	}
-	return 1;
-}
-
-
 static int mdss_panel_parse_dt(struct device_node *np,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -1792,18 +1782,11 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->off_cmds,
 		"qcom,mdss-dsi-off-command", "qcom,mdss-dsi-off-command-state");
 
-	ctrl_pdata->init_last = of_property_read_bool(np, "qcom,mdss-dsi-init-last");
-
-	rc = of_property_read_u32(np, "qcom,mdss-dsi-panel-status-command-num", &tmp);
-	ctrl_pdata->status_cmds_num = (!rc ? tmp : 0);
-
-	mdss_dsi_parse_status_command(np, ctrl_pdata);
-
-	rc = mdss_dsi_parse_status_value(np, ctrl_pdata);
-	if (!rc) {
-		pr_err("%s: failed to parse panel status_value\n", __func__);
-		goto error;
-	}
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->status_cmds,
+			"qcom,mdss-dsi-panel-status-command",
+				"qcom,mdss-dsi-panel-status-command-state");
+	rc = of_property_read_u32(np, "qcom,mdss-dsi-panel-status-value", &tmp);
+	ctrl_pdata->status_value = (!rc ? tmp : 0);
 
 
 	ctrl_pdata->status_mode = ESD_MAX;
@@ -1814,15 +1797,15 @@ static int mdss_panel_parse_dt(struct device_node *np,
 			ctrl_pdata->status_mode = ESD_BTA;
 		} else if (!strcmp(data, "reg_read")) {
 			ctrl_pdata->status_mode = ESD_REG;
-			ctrl_pdata->status_cmds_rlen = 4;
-
-
+			ctrl_pdata->status_cmds_rlen = 1;
+			ctrl_pdata->check_read_status =
+						mdss_dsi_gen_read_status;
 		} else if (!strcmp(data, "reg_read_nt35596")) {
 			ctrl_pdata->status_mode = ESD_REG_NT35596;
 			ctrl_pdata->status_error_count = 0;
 			ctrl_pdata->status_cmds_rlen = 8;
-
-
+			ctrl_pdata->check_read_status =
+						mdss_dsi_nt35596_read_status;
 		} else if (!strcmp(data, "te_signal_check")) {
 			if (pinfo->mipi.mode == DSI_CMD_MODE)
 				ctrl_pdata->status_mode = ESD_TE;

@@ -51,8 +51,6 @@
 #include <linux/qcom_iommu.h>
 #include <linux/msm_iommu_domains.h>
 
-#include "mdss_dsi.h"
-#include "mdss_mdp.h"
 #include "mdss_fb.h"
 #include "mdss_mdp_splash_logo.h"
 
@@ -123,21 +121,16 @@ void mdss_fb_no_update_notify_timer_cb(unsigned long data)
 	complete(&mfd->no_update.comp);
 }
 
-void mdss_fb_bl_update_notify(struct msm_fb_data_type *mfd,
-		uint32_t notification_type)
+void mdss_fb_bl_update_notify(struct msm_fb_data_type *mfd)
 {
 	if (!mfd) {
 		pr_err("%s mfd NULL\n", __func__);
 		return;
 	}
 	mutex_lock(&mfd->update.lock);
-	if (mfd->update.is_suspend) {
-		mutex_unlock(&mfd->update.lock);
-		return;
-	}
 	if (mfd->update.ref_count > 0) {
 		mutex_unlock(&mfd->update.lock);
-		mfd->update.value = notification_type;
+		mfd->update.value = NOTIFY_TYPE_BL_UPDATE;
 		complete(&mfd->update.comp);
 		mutex_lock(&mfd->update.lock);
 	}
@@ -146,7 +139,7 @@ void mdss_fb_bl_update_notify(struct msm_fb_data_type *mfd,
 	mutex_lock(&mfd->no_update.lock);
 	if (mfd->no_update.ref_count > 0) {
 		mutex_unlock(&mfd->no_update.lock);
-		mfd->no_update.value = notification_type;
+		mfd->no_update.value = NOTIFY_TYPE_BL_UPDATE;
 		complete(&mfd->no_update.comp);
 		mutex_lock(&mfd->no_update.lock);
 	}
@@ -241,22 +234,11 @@ static int mdss_fb_notify_update(struct msm_fb_data_type *mfd,
 
 static int lcd_backlight_registered;
 
-#define WINGTECH_MDSS_BRIGHT_TO_BL(out, v, bl_min, bl_max, min_bright, max_bright) do {\
-					if (v <= ((int)min_bright*(int)bl_max-(int)bl_min*(int)max_bright)\
-						/((int)bl_max - (int)bl_min)) out = 1; \
-					else \
-					out = (((int)bl_max - (int)bl_min)*v + \
-					((int)max_bright*(int)bl_min - (int)min_bright*(int)bl_max)) \
-					/((int)max_bright - (int)min_bright); \
-					} while (0)
-
 static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 				      enum led_brightness value)
 {
 	struct msm_fb_data_type *mfd = dev_get_drvdata(led_cdev->dev->parent);
-	int bl_lvl, brightness_min;
-
-	brightness_min = 10;
+	int bl_lvl;
 
 	if (mfd->boot_notification_led) {
 		led_trigger_event(mfd->boot_notification_led, 0);
@@ -270,10 +252,6 @@ static void mdss_fb_set_bl_brightness(struct led_classdev *led_cdev,
 	   driver backlight level 0 to bl_max with rounding */
 	MDSS_BRIGHT_TO_BL(bl_lvl, value, mfd->panel_info->bl_max,
 				mfd->panel_info->brightness_max);
-		if ((bl_lvl < 3) && (bl_lvl != 0)) {
-
-			bl_lvl = 3;
-		}
 
 	if (!bl_lvl && value)
 		bl_lvl = 1;
@@ -1186,7 +1164,6 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 {
 	struct mdss_panel_data *pdata;
 	u32 temp = bkl_lvl;
-	bool ad_bl_notify_needed = false;
 	bool bl_notify_needed = false;
 
 	/* todo: temporary workaround to support doze mode */
@@ -1200,12 +1177,6 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 		|| !mfd->bl_updated) && !IS_CALIB_MODE_BL(mfd)) ||
 		mfd->panel_info->cont_splash_enabled) {
 		mfd->unset_bl_level = bkl_lvl;
-
-		if (bkl_lvl == 0) {
-			pdata = dev_get_platdata(&mfd->pdev->dev);
-			pdata->set_backlight(pdata, bkl_lvl);
-		}
-
 		return;
 	} else {
 		mfd->unset_bl_level = 0;
@@ -1216,7 +1187,7 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 	if ((pdata) && (pdata->set_backlight)) {
 		if (mfd->mdp.ad_calc_bl)
 			(*mfd->mdp.ad_calc_bl)(mfd, temp, &temp,
-							&ad_bl_notify_needed);
+							&bl_notify_needed);
 		if (!IS_CALIB_MODE_BL(mfd))
 			mdss_fb_scale_bl(mfd, &temp);
 		/*
@@ -1230,20 +1201,14 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 		if (mfd->bl_level_scaled == temp) {
 			mfd->bl_level = bkl_lvl;
 		} else {
-            if (mfd->bl_level != bkl_lvl)
-				bl_notify_needed = true;
 			pr_debug("backlight sent to panel :%d\n", temp);
 			pdata->set_backlight(pdata, temp);
 			mfd->bl_level = bkl_lvl;
 			mfd->bl_level_scaled = temp;
+			bl_notify_needed = true;
 		}
-
-		if (ad_bl_notify_needed)
-			mdss_fb_bl_update_notify(mfd,
-					NOTIFY_TYPE_BL_AD_ATTEN_UPDATE);
-		else if (bl_notify_needed)
-			mdss_fb_bl_update_notify(mfd,
-					NOTIFY_TYPE_BL_UPDATE);
+		if (bl_notify_needed)
+			mdss_fb_bl_update_notify(mfd);
 	}
 }
 
@@ -1264,15 +1229,12 @@ void mdss_fb_update_backlight(struct msm_fb_data_type *mfd)
 			if (mfd->mdp.ad_calc_bl)
 				(*mfd->mdp.ad_calc_bl)(mfd, temp, &temp,
 								&bl_notify);
-			if (bl_notify)
-				mdss_fb_bl_update_notify(mfd,
-					NOTIFY_TYPE_BL_AD_ATTEN_UPDATE);
 			if (!IS_CALIB_MODE_BL(mfd))
 				mdss_fb_scale_bl(mfd, &temp);
 			pdata->set_backlight(pdata, temp);
 			mfd->bl_level_scaled = mfd->unset_bl_level;
 			mfd->bl_updated = 1;
-
+			mdss_fb_bl_update_notify(mfd);
 		}
 	}
 	mutex_unlock(&mfd->bl_lock);
@@ -3455,6 +3417,7 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 	struct msm_sync_pt_data *sync_pt_data = NULL;
 	unsigned int dsi_mode = 0;
 	struct mdss_panel_data *pdata = NULL;
+
 	if (!info || !info->par)
 		return -EINVAL;
 
@@ -3533,6 +3496,7 @@ int mdss_fb_do_ioctl(struct fb_info *info, unsigned int cmd,
 
 		ret = mdss_fb_lpm_enable(mfd, dsi_mode);
 		break;
+
 	default:
 		if (mfd->mdp.ioctl_handler)
 			ret = mfd->mdp.ioctl_handler(mfd, cmd, argp);

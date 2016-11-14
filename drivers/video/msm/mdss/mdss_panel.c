@@ -37,7 +37,6 @@ int mdss_panel_debugfs_setup(struct mdss_panel_info *panel_info, struct dentry
 	if (IS_ERR_OR_NULL(debugfs_info->root)) {
 		pr_err("Debugfs create dir failed with error: %ld\n",
 					PTR_ERR(debugfs_info->root));
-		kfree(debugfs_info);
 		return -ENODEV;
 	}
 
