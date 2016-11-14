@@ -52,29 +52,6 @@
 				05 01 00 00 78 00 02 10 00];
 		qcom,mdss-dsi-on-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-off-command-state = "dsi_hs_mode";
-		qcom,mdss-dsi-panel-warm-command = [29 00 00 00 00 00 02 B0 00
-				29 00 00 00 00 00 02 D6 01
-				29 00 00 00 00 00 1F C7 00 0A 11 1B 2A 38 44 55 3C 45 52 60 6A 71 77 00 0A 11 1B 2A 38 44 55 3C 45 52 60 6A 71 77
-				29 01 00 00 00 00 14 C8 01 00 FE FE 01 FC 00 00 FF FE FF CA 00 00 FD 00 01 84 00];
-		qcom,mdss-dsi-panel-cool-command = [29 00 00 00 00 00 02 B0 00
-				29 00 00 00 00 00 02 D6 01
-				29 00 00 00 00 00 1F C7 00 0B 12 1C 2B 3B 46 58 3F 49 57 65 6D 74 77 00 0B 12 1C 2B 3B 46 58 3F 49 57 65 6D 74 77
-				29 01 00 00 00 00 14 C8 01 00 00 01 FB F2 00 00 00 01 FD FC 00 00 00 06 08 F4 00];
-		qcom,mdss-dsi-panel-nature-command = [29 00 00 00 00 00 02 B0 00
-				29 00 00 00 00 00 02 D6 01
-				29 00 00 00 00 00 1F C7 00 0B 12 1C 2B 3B 46 58 3F 49 57 65 6D 74 77 00 0B 12 1C 2B 3B 46 58 3F 49 57 65 6D 74 77
-				29 01 00 00 00 00 14 C8 01 00 00 01 FD FC 00 00 01 01 FD E8 00 00 00 05 05 C2 00];
-		qcom,mdss-dsi-panel-ce-std-command = [29 00 00 00 00 00 02 B0 00
-				29 00 00 00 00 00 02 D6 01
-				29 01 00 00 00 00 2C CA 1C FC FC FC 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00];
-		qcom,mdss-dsi-panel-ce-vivid-command = [29 00 00 00 00 00 02 B0 00
-				29 00 00 00 00 00 02 D6 01
-				29 01 00 00 00 00 2C CA 1D FC FC FC 20 D4 D4 40 C0 C0 40 C0 C0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00];
-		qcom,mdss-dsi-panel-ce-bright-command = [29 00 00 00 00 00 02 B0 00
-				29 00 00 00 00 00 02 D6 01
-				29 01 00 00 00 00 2C CA 1D FC FC FC 40 C0 C0 7F 80 80 7F 80 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00];
-		qcom,mdss-dsi-panel-gamma-command-state = "dsi_lp_mode";
-		qcom,mdss-dsi-panel-ce-command-state = "dsi_lp_mode";
 		qcom,mdss-dsi-init-last;
 		qcom,mdss-dsi-h-sync-pulse = <1>;
 		qcom,mdss-dsi-traffic-mode = "burst_mode";
