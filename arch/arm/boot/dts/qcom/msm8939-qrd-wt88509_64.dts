@@ -23,7 +23,7 @@
 #include "dsi-panel-nt35521s-ebbg-720p-video.dtsi"
 #include "dsi-panel-otm1285a-tianma-720p-video.dtsi"
 #include "dsi-panel-ili9881c-tianma-720p-video.dtsi"
-
+#include "cyanogenmod-xiaomi-ido.dtsi"
 
 / {
 	model = "Qualcomm Technologies, Inc. MSM8939v3.0 QRD SKUK";
