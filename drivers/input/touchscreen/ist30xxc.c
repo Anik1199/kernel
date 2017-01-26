@@ -1091,11 +1091,11 @@ static int fb_notifier_callback(struct notifier_block *self,
 	int *blank;
 	struct ist30xx_data *ist_data =
 		container_of(self, struct ist30xx_data, fb_notif);
-
 	if (evdata && evdata->data && event == FB_EVENT_BLANK &&
 		ist_data && ist_data->client) {
 		blank = evdata->data;
-		if (*blank == FB_BLANK_UNBLANK)
+		if (*blank == FB_BLANK_UNBLANK || *blank == FB_BLANK_NORMAL 
+		 || *blank == FB_BLANK_VSYNC_SUSPEND || *blank == FB_BLANK_HSYNC_SUSPEND ) 
 		   schedule_work(&ist_data->fb_notify_work);
 		 else if (*blank == FB_BLANK_POWERDOWN) {
 			flush_work(&ist_data->fb_notify_work);
